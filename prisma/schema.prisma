@@ -8,127 +8,49 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  name          String
-  email         String          @unique
-  password      String?
-  role          Role
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String
+  createdAt DateTime @default(now())
 
-  profile       Profile?
-  projects      ProjectMember[]
-  certificates  Certificate[]
-  applications  Application[]
-
-  createdAt     DateTime @default(now())
+  profile   Profile?
 }
 
 model Profile {
-  id            String   @id @default(cuid())
-  userId        String   @unique
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  department String
+  year       Int
+  github     String?
+  linkedin   String?
+  skills     String[]
 
-  department    String
-  year          Int
-
-  github        String?
-  linkedin      String?
-  bio           String?
-
-  skills        String[]
-
-  user          User @relation(fields: [userId], references: [id])
+  user       User @relation(fields: [userId], references: [id])
 }
 
 model Project {
-  id              String          @id @default(cuid())
-  title           String
-  description     String
-
-  domain          String
-
-  requiredSkills  String[]
-
-  visibility      Visibility
-
-  members         ProjectMember[]
-
-  createdAt       DateTime @default(now())
-}
-
-model ProjectMember {
-  id          String @id @default(cuid())
-
-  userId      String
-  projectId   String
-
-  role        String
-
-  user        User @relation(fields: [userId], references: [id])
-  project     Project @relation(fields: [projectId], references: [id])
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  domain         String
+  requiredSkills String[]
+  createdAt      DateTime @default(now())
 }
 
 model Certificate {
-  id          String @id @default(cuid())
-
-  title       String
-  issuer      String
-  fileUrl     String?
-
-  userId      String
-
-  createdAt   DateTime @default(now())
-
-  user        User @relation(fields: [userId], references: [id])
-}
-
-model Company {
-  id          String @id @default(cuid())
-
-  name        String
-  website     String?
-
-  jobs        Job[]
-}
-
-model Job {
-  id          String @id @default(cuid())
-
-  title       String
-  description String
-
-  companyId   String
-
-  company     Company @relation(fields: [companyId], references: [id])
-
-  applications Application[]
+  id        String   @id @default(cuid())
+  title     String
+  issuer    String
+  userId    String
+  createdAt DateTime @default(now())
 }
 
 model Application {
-  id          String @id @default(cuid())
-
-  userId      String
-  jobId       String
-
-  status      ApplicationStatus
-
-  user        User @relation(fields: [userId], references: [id])
-  job         Job @relation(fields: [jobId], references: [id])
-}
-
-enum Role {
-  STUDENT
-  FACULTY
-  RECRUITER
-}
-
-enum Visibility {
-  PUBLIC
-  PRIVATE
-}
-
-enum ApplicationStatus {
-  APPLIED
-  SHORTLISTED
-  INTERVIEW
-  REJECTED
-  PLACED
+  id        String   @id @default(cuid())
+  company   String
+  position  String
+  status    String
+  userId    String
+  createdAt DateTime @default(now())
 }
