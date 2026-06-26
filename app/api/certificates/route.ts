@@ -1,28 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-// Get all certificates
-export async function GET() {
-  try {
-    const certificates = await prisma.certificate.findMany();
-
-    return Response.json({
-      success: true,
-      certificates,
-    });
-  } catch (error) {
-    console.error(error);
-
-    return Response.json(
-      {
-        success: false,
-        message: "Failed to fetch certificates",
-      },
-      { status: 500 }
-    );
-  }
-}
-
-// Create a certificate
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -37,18 +14,24 @@ export async function POST(req: Request) {
 
     return Response.json({
       success: true,
-      certificate,
       message: "Certificate Added Successfully",
+      certificate,
     });
   } catch (error) {
     console.error(error);
 
-    return Response.json(
-      {
-        success: false,
-        message: "Certificate Creation Failed",
-      },
-      { status: 500 }
-    );
+    return Response.json({
+      success: false,
+      message: "Failed to Add Certificate",
+    });
   }
+}
+
+export async function GET() {
+  const certificates = await prisma.certificate.findMany();
+
+  return Response.json({
+    success: true,
+    certificates,
+  });
 }

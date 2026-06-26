@@ -1,19 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { generateToken } from "@/lib/jwt";
+import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    if (!body.email) {
-      return Response.json(
-        {
-          success: false,
-          message: "Email is required",
-        },
-        { status: 400 }
-      );
-    }
-
+    // Check if email exists
     const user = await prisma.user.findUnique({
       where: {
         email: body.email,
@@ -21,32 +14,49 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return Response.json(
-        {
-          success: false,
-          message: "User not found",
-        },
-        { status: 404 }
-      );
+      return Response.json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    return Response.json(
-      {
-        success: true,
-        user,
-        message: "Login Successful",
-      },
-      { status: 200 }
+    // Compare password
+    const isPasswordCorrect = await bcrypt.compare(
+      body.password,
+      user.password
     );
-  } catch (error) {
-    console.error(error);
 
-    return Response.json(
-      {
+    if (!isPasswordCorrect) {
+      return Response.json({
         success: false,
-        message: "Login Failed",
+        message: "Invalid password",
+      });
+    }
+
+    // Generate JWT Token
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return Response.json({
+      success: true,
+      message: "Login Successful",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
-      { status: 500 }
-    );
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+
+    return Response.json({
+      success: false,
+      message: "Login Failed",
+    });
   }
 }
