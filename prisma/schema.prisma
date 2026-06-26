@@ -15,7 +15,9 @@ model User {
   role      String
   createdAt DateTime @default(now())
 
-  profile   Profile?
+  profile      Profile?
+  certificates Certificate[]
+  applications Application[]
 }
 
 model Profile {
@@ -27,7 +29,7 @@ model Profile {
   linkedin   String?
   skills     String[]
 
-  user       User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Project {
@@ -43,8 +45,11 @@ model Certificate {
   id        String   @id @default(cuid())
   title     String
   issuer    String
-  userId    String
+  fileUrl   String?
   createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Application {
@@ -52,6 +57,8 @@ model Application {
   company   String
   position  String
   status    String
-  userId    String
   createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

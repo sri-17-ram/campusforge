@@ -1,37 +1,42 @@
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
-    const body = await req.json();
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
-    const certificate = await prisma.certificate.create({
-      data: {
-        title: body.title,
-        issuer: body.issuer,
-        userId: body.userId,
+    if (!userId) {
+      return Response.json(
+        {
+          success: false,
+          message: "User ID is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const certificates = await prisma.certificate.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
     return Response.json({
       success: true,
-      message: "Certificate Added Successfully",
-      certificate,
+      certificates,
     });
   } catch (error) {
     console.error(error);
 
-    return Response.json({
-      success: false,
-      message: "Failed to Add Certificate",
-    });
+    return Response.json(
+      {
+        success: false,
+        message: "Failed to fetch certificates",
+      },
+      { status: 500 }
+    );
   }
-}
-
-export async function GET() {
-  const certificates = await prisma.certificate.findMany();
-
-  return Response.json({
-    success: true,
-    certificates,
-  });
 }
