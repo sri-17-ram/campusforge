@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
 
-// Get all projects
+// Get all applications
 export async function GET() {
   try {
-    const projects = await prisma.project.findMany();
+    const applications = await prisma.application.findMany();
 
     return Response.json({
       success: true,
-      projects,
+      applications,
     });
   } catch (error) {
     console.error(error);
@@ -15,31 +15,31 @@ export async function GET() {
     return Response.json(
       {
         success: false,
-        message: "Failed to fetch projects",
+        message: "Failed to fetch applications",
       },
       { status: 500 }
     );
   }
 }
 
-// Create a new project
+// Create a new application
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const project = await prisma.project.create({
+    const application = await prisma.application.create({
       data: {
-        title: body.title,
-        description: body.description,
-        domain: body.domain,
-        requiredSkills: body.requiredSkills,
+        company: body.company,
+        position: body.position,
+        status: body.status,
+        userId: body.userId,
       },
     });
 
     return Response.json({
       success: true,
-      project,
-      message: "Project Created Successfully",
+      application,
+      message: "Application Created Successfully",
     });
   } catch (error) {
     console.error(error);
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         success: false,
-        message: "Project Creation Failed",
+        message: "Application Creation Failed",
       },
       { status: 500 }
     );
