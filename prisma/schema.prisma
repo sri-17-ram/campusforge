@@ -7,58 +7,286 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  STUDENT
+  FACULTY
+  RECRUITER
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  TECHNICAL_ROUND
+  HR_ROUND
+  OFFER
+  ACCEPTED
+  REJECTED
+  HIRED
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  CLOSED
+  ARCHIVED
+  EXPIRED
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String?
-  role      String
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  avatar    String?
 
-  profile      Profile?
-  certificates Certificate[]
-  applications Application[]
+  student   Student?
+  faculty   Faculty?
+  recruiter Recruiter?
+
+  notifications Notification[]
+  activities    Activity[]
 }
 
-model Profile {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  department String
-  year       Int
-  github     String?
-  linkedin   String?
-  skills     String[]
+model Student {
+  id String @id @default(cuid())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bio    String?
+  branch String?
+  year   Int?
+
+  github    String?
+  linkedin  String?
+  portfolio String?
+
+  resume          String?
+  resumeName      String?
+  resumeSize      Int?
+  resumeUpdatedAt DateTime?
+  resumeStatus    VerificationStatus @default(PENDING)
+  resumeFeedback  String?
+  resumeRating    Int?
+
+  profileRating   Int?
+  profileFeedback String?
+
+  isPlacementReady Boolean @default(false)
+  placementStatus  String?
+  offersCount      Int     @default(0)
+
+  score Int? @default(0)
+
+  projects        Project[]
+  skills          Skill[]
+  certificates    Certificate[]
+  applications    JobApplication[]
+  teamInvitations TeamInvitation[]
 }
 
-model Project {
-  id             String   @id @default(cuid())
-  title          String
-  description    String
-  domain         String
-  requiredSkills String[]
-  createdAt      DateTime @default(now())
+model Faculty {
+  id String @id @default(cuid())
+
+  department String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Recruiter {
+  id String @id @default(cuid())
+
+  company     String?
+  designation String?
+
+  companyLogo  String?
+  industry     String?
+  website      String?
+  location     String?
+  description  String?
+  companySize  String?
+  foundedYear  String?
+  socialLinks  String?
+  hiringBanner String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobs Job[]
+}
+
+model Skill {
+  id String @id @default(cuid())
+
+  name String
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
 model Certificate {
-  id        String   @id @default(cuid())
-  title     String
-  issuer    String
-  fileUrl   String?
-  createdAt DateTime @default(now())
+  id String @id @default(cuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  issuer        String?
+  issueDate     DateTime?
+  link          String?
+  credentialUrl String?
+  fileUrl       String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  status       VerificationStatus @default(PENDING)
+  remarks      String?
+  verifiedById String?
+  verifiedAt   DateTime?
+
+  createdAt DateTime @default(now())
 }
 
-model Application {
-  id        String   @id @default(cuid())
-  company   String
-  position  String
-  status    String
-  createdAt DateTime @default(now())
+model Project {
+  id String @id @default(cuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+
+  github   String?
+  demo     String?
+  imageUrl String?
+
+  projectFileUrl   String?
+  projectFileName  String?
+  projectFileSize  Int?
+  projectFileType  String?
+  projectUpdatedAt DateTime?
+
+  techStack String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  status        VerificationStatus @default(PENDING)
+  rating        Int?
+  reviewComment String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+
+  teamInvitations TeamInvitation[]
+
+  createdAt DateTime @default(now())
+}
+
+model Job {
+  id String @id @default(cuid())
+
+  title       String
+  description String
+
+  location String?
+  salary   String?
+
+  employmentType String?
+  experience     String?
+  department     String?
+  skillsRequired String?
+  openings       Int?
+  deadline       DateTime?
+  status         JobStatus @default(PUBLISHED)
+
+  recruiterId String
+  recruiter   Recruiter @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+
+  applications JobApplication[]
+
+  createdAt DateTime @default(now())
+}
+
+model JobApplication {
+  id String @id @default(cuid())
+
+  status ApplicationStatus @default(APPLIED)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  appliedAt DateTime @default(now())
+
+  timeline  ApplicationTimeline[]
+  interviews Interview[]
+
+  // Offer Management Documents
+  offerLetter   String?
+  ndaDocument   String?
+  joiningLetter String?
+  hrDocument    String?
+
+  @@unique([studentId, jobId])
+}
+
+model ApplicationTimeline {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   JobApplication    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  note          String?
+  createdAt     DateTime          @default(now())
+}
+
+model Interview {
+  id            String         @id @default(cuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  date          DateTime
+  mode          String
+  link          String?
+  location      String?
+  interviewer   String?
+  round         Int            @default(1)
+  status        String         @default("SCHEDULED")
+  createdAt     DateTime       @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model TeamInvitation {
+  id        String            @id @default(cuid())
+  projectId String
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inviteeId String
+  invitee   Student           @relation(fields: [inviteeId], references: [id], onDelete: Cascade)
+  status    ApplicationStatus @default(APPLIED)
+  createdAt DateTime          @default(now())
 }

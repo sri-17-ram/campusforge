@@ -10,17 +10,31 @@ import {
   Rocket,
   User,
   Settings,
+
   Menu,
   X,
+  TrendingUp,
+  Target,
+  Calendar,
+  Building,
+  GraduationCap
+
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 
 export function Sidebar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
 
-  const links = [
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) setUser(JSON.parse(storedUser))
+  }, [])
+
+
+  const studentLinks = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/projects', label: 'Projects', icon: Briefcase },
     { href: '/team-finder', label: 'Team Finder', icon: Users },
@@ -28,6 +42,31 @@ export function Sidebar() {
     { href: '/portfolio', label: 'Portfolio', icon: User },
     { href: '/settings', label: 'Settings', icon: Settings },
   ]
+
+  const recruiterLinks = [
+    { href: '/recruiter/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/recruiter/analytics', label: 'Analytics', icon: TrendingUp },
+    { href: '/recruiter/jobs', label: 'Manage Jobs', icon: Briefcase },
+    { href: '/recruiter/applications', label: 'Applications', icon: Users },
+    { href: '/recruiter/calendar', label: 'Interviews', icon: Calendar },
+    { href: '/recruiter/settings', label: 'Company Profile', icon: Building },
+  ]
+
+  const facultyLinks = [
+    { href: '/faculty/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/faculty/students', label: 'Students', icon: Users },
+    { href: '/faculty/reviews', label: 'Verifications', icon: Target },
+    { href: '/settings', label: 'Settings', icon: Settings },
+  ]
+
+  const getLinks = () => {
+    if (user?.role === 'RECRUITER') return recruiterLinks
+    if (user?.role === 'FACULTY') return facultyLinks
+    return studentLinks
+  }
+
+  const links = getLinks()
+
 
   const isActive = (href: string) => pathname === href
 
@@ -97,14 +136,14 @@ export function Sidebar() {
           <div className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 px-4 py-2">
               <div className="w-9 h-9 bg-gradient-to-br from-accent to-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                U
+                {user?.name?.[0]?.toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-sidebar-foreground truncate">
-                  User Name
+                  {user?.name || 'User Name'}
                 </p>
                 <p className="text-xs text-sidebar-foreground/60 truncate">
-                  user@campus.dev
+                  {user?.email || 'user@campus.dev'}
                 </p>
               </div>
             </div>

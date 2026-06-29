@@ -6,73 +6,35 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Clock, CheckCircle, XCircle, Mail, Eye, Phone, Calendar } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function RecruiterApplicationsPage() {
   const [selectedTab, setSelectedTab] = useState('pending')
 
-  const applications = [
-    {
-      id: 1,
-      candidateName: 'Arjun Singh',
-      position: 'Senior Software Engineer',
-      appliedDate: 'Jan 22',
-      status: 'pending',
-      employabilityScore: 82,
-      daysAgo: '2 days',
-      skills: ['React', 'Node.js', 'AWS'],
-    },
-    {
-      id: 2,
-      candidateName: 'Priya Sharma',
-      position: 'Product Manager',
-      appliedDate: 'Jan 21',
-      status: 'shortlisted',
-      employabilityScore: 76,
-      daysAgo: '3 days',
-      skills: ['Product Strategy', 'Analytics', 'Leadership'],
-    },
-    {
-      id: 3,
-      candidateName: 'Vikram Patel',
-      position: 'Data Scientist',
-      appliedDate: 'Jan 20',
-      status: 'shortlisted',
-      employabilityScore: 88,
-      daysAgo: '4 days',
-      skills: ['Python', 'Machine Learning', 'SQL'],
-    },
-    {
-      id: 4,
-      candidateName: 'Neha Gupta',
-      position: 'Frontend Engineer',
-      appliedDate: 'Jan 19',
-      status: 'rejected',
-      employabilityScore: 79,
-      daysAgo: '5 days',
-      skills: ['React', 'TypeScript', 'Tailwind CSS'],
-    },
-    {
-      id: 5,
-      candidateName: 'Rahul Kumar',
-      position: 'Senior Software Engineer',
-      appliedDate: 'Jan 18',
-      status: 'interviewed',
-      employabilityScore: 71,
-      daysAgo: '6 days',
-      skills: ['Docker', 'Kubernetes', 'AWS'],
-    },
-    {
-      id: 6,
-      candidateName: 'Zara Khan',
-      position: 'UX/UI Designer',
-      appliedDate: 'Jan 17',
-      status: 'interviewed',
-      employabilityScore: 84,
-      daysAgo: '7 days',
-      skills: ['Figma', 'UI Design', 'Prototyping'],
-    },
-  ]
+  const [applications, setApplications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchApps = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      try {
+        const res = await fetch('/api/applications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.success) {
+          setApplications(data.applications || [])
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchApps()
+  }, [])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -166,7 +128,7 @@ export default function RecruiterApplicationsPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {applications.filter(a => a.status === status).map((app) => (
+                  {applications.filter(a => a.status.toLowerCase() === status).map((app) => (
                     <div
                       key={app.id}
                       className="group relative overflow-hidden rounded-lg bg-card border border-secondary/20 backdrop-blur-sm hover:border-secondary/60 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/20 p-5"
@@ -177,27 +139,27 @@ export default function RecruiterApplicationsPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              {getStatusIcon(app.status)}
+                              {getStatusIcon(app.status.toLowerCase())}
                               <h3 className="text-lg font-bold text-foreground group-hover:text-secondary transition-colors">
-                                {app.candidateName}
+                                {app.student?.user?.name || 'Unknown Candidate'}
                               </h3>
                             </div>
-                            <p className="text-muted-foreground text-sm mb-2">{app.position}</p>
+                            <p className="text-muted-foreground text-sm mb-2">{app.job?.title || 'Unknown Position'}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="text-xl font-bold text-accent">{app.employabilityScore}</p>
+                            <p className="text-xl font-bold text-accent">{app.student?.score || 0}</p>
                             <p className="text-xs text-muted-foreground">Score</p>
                           </div>
                         </div>
 
                         <div className="space-y-3 pt-3 border-t border-muted/30">
                           <div className="flex flex-wrap gap-2">
-                            {app.skills.map((skill, idx) => (
+                            {(app.student?.skills || []).map((skill: any, idx: number) => (
                               <span
                                 key={idx}
                                 className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary"
                               >
-                                {skill}
+                                {skill.name || skill}
                               </span>
                             ))}
                           </div>
@@ -205,13 +167,10 @@ export default function RecruiterApplicationsPage() {
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Calendar className="w-4 h-4" />
-                              Applied {app.daysAgo}
+                              Applied {new Date(app.createdAt).toLocaleDateString()}
                             </div>
-                            <div className={`px-3 py-1 rounded text-xs font-semibold ${getStatusColor(app.status)}`}>
-                              {app.status === 'pending' ? 'Pending'
-                                : app.status === 'shortlisted' ? 'Shortlisted'
-                                : app.status === 'interviewed' ? 'Interviewed'
-                                : 'Rejected'}
+                            <div className={`px-3 py-1 rounded text-xs font-semibold ${getStatusColor(app.status.toLowerCase())}`}>
+                              {app.status}
                             </div>
                           </div>
 

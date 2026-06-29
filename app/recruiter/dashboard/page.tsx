@@ -1,260 +1,191 @@
 'use client'
 
 import { AppLayout } from '@/components/app-layout'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Briefcase, Users, FileText, TrendingUp, Eye, Plus, Clock, CheckCircle } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Briefcase, Users, Eye, FileText, Target, Calendar, CheckCircle2, XCircle, TrendingUp, Clock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, ComposedChart, Line, Cell } from 'recharts'
 import Link from 'next/link'
 
 export default function RecruiterDashboard() {
-  const openPositions = [
-    {
-      title: 'Senior Software Engineer',
-      company: 'TechCorp',
-      applications: 12,
-      views: 248,
-      postedDate: '5 days ago',
-    },
-    {
-      title: 'Product Manager',
-      company: 'InnovateLabs',
-      applications: 8,
-      views: 156,
-      postedDate: '2 days ago',
-    },
-    {
-      title: 'Data Scientist',
-      company: 'DataFlow',
-      applications: 15,
-      views: 342,
-      postedDate: '1 day ago',
-    },
-  ]
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [activities, setActivities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const recentApplications = [
-    {
-      id: 1,
-      candidateName: 'Arjun Singh',
-      position: 'Senior Software Engineer',
-      appliedDate: 'Jan 22',
-      status: 'shortlisted',
-      employabilityScore: 82,
-    },
-    {
-      id: 2,
-      candidateName: 'Priya Sharma',
-      position: 'Product Manager',
-      appliedDate: 'Jan 21',
-      status: 'pending',
-      employabilityScore: 76,
-    },
-    {
-      id: 3,
-      candidateName: 'Vikram Patel',
-      position: 'Data Scientist',
-      appliedDate: 'Jan 20',
-      status: 'shortlisted',
-      employabilityScore: 88,
-    },
-  ]
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) return
 
-  const hiringPipeline = [
-    { stage: 'Applied', count: 35, color: 'from-blue-500 to-cyan-500' },
-    { stage: 'Reviewed', count: 28, color: 'from-purple-500 to-indigo-500' },
-    { stage: 'Shortlisted', count: 12, color: 'from-indigo-500 to-blue-500' },
-    { stage: 'Interviewed', count: 6, color: 'from-cyan-500 to-blue-500' },
-    { stage: 'Offered', count: 2, color: 'from-green-500 to-emerald-500' },
-  ]
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-accent/20 text-accent'
-      case 'shortlisted':
-        return 'bg-green-500/20 text-green-600 dark:text-green-400'
-      case 'rejected':
-        return 'bg-red-500/20 text-red-600 dark:text-red-400'
-      default:
-        return 'bg-primary/20 text-primary'
+      try {
+        const res = await fetch('/api/recruiter/dashboard', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+        if (data.success) {
+          setAnalytics(data.analytics)
+          setActivities(data.activities)
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
     }
+    fetchDashboard()
+  }, [])
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full min-h-[500px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
+    )
   }
+
+  if (!analytics) return <AppLayout><div className="p-8 text-center">Failed to load analytics</div></AppLayout>
+
+  const STATS = [
+    { label: 'Total Jobs', value: analytics.totalJobs, icon: Briefcase, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Active Jobs', value: analytics.activeJobs, icon: Target, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Total Applications', value: analytics.totalApplications, icon: FileText, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { label: 'Interviews Scheduled', value: analytics.interviewsScheduled, icon: Calendar, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: 'Hired Candidates', value: analytics.hired, icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10' },
+    { label: 'Profile Views', value: analytics.companyViews, icon: Eye, color: 'text-pink-500', bg: 'bg-pink-500/10' },
+  ]
 
   return (
     <AppLayout>
       <div className="space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">Recruiter Dashboard</h1>
-          <p className="text-muted-foreground">Find and manage top talent from campus</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground tracking-tight">Recruiter Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Real-time insights and analytics for your hiring pipelines.</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="bg-card px-4 py-2 rounded-lg border border-primary/20 shadow-sm flex items-center gap-3">
+              <span className="text-sm text-muted-foreground font-medium">Profile Completion</span>
+              <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary transition-all" style={{ width: `${analytics.profileCompletion}%` }}></div>
+              </div>
+              <span className="text-sm font-bold text-primary">{analytics.profileCompletion}%</span>
+            </div>
+            <Link href="/recruiter/jobs"><button className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">Manage Jobs</button></Link>
+          </div>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { icon: Briefcase, label: 'Open Positions', value: '3', color: 'from-primary to-accent' },
-            { icon: FileText, label: 'Applications', value: '35', color: 'from-secondary to-primary' },
-            { icon: Users, label: 'Shortlisted', value: '12', color: 'from-accent to-secondary' },
-            { icon: TrendingUp, label: 'Offer Rate', value: '16%', color: 'from-primary to-secondary' },
-          ].map((metric, idx) => {
-            const Icon = metric.icon
+        {/* Top Metric Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {STATS.map((stat, i) => {
+            const Icon = stat.icon
             return (
-              <div
-                key={idx}
-                className={`group relative overflow-hidden rounded-xl bg-card border border-primary/20 backdrop-blur-sm hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 p-6`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-muted-foreground uppercase">{metric.label}</p>
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${metric.color} bg-opacity-20`}>
-                      <Icon className="w-4 h-4 text-primary" />
-                    </div>
+              <Card key={i} className="border border-muted hover:border-primary/50 transition-colors bg-card/50 backdrop-blur-sm shadow-sm">
+                <CardContent className="p-5 flex flex-col justify-center items-center text-center space-y-2">
+                  <div className={`p-3 rounded-full ${stat.bg} ${stat.color}`}>
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    {metric.value}
-                  </div>
-                </div>
-              </div>
+                  <h3 className="text-2xl font-bold text-foreground">{stat.value}</h3>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                </CardContent>
+              </Card>
             )
           })}
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Open Positions */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Open Positions</h2>
-              <Link href="/recruiter/jobs">
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {openPositions.map((position, idx) => (
-                <div
-                  key={idx}
-                  className="group relative overflow-hidden rounded-lg bg-card border border-secondary/20 backdrop-blur-sm hover:border-secondary/60 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/20 p-5"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                  <div className="relative z-10 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-foreground text-lg group-hover:text-secondary transition-colors">
-                          {position.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">{position.company}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex gap-4 text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <FileText className="w-4 h-4" />
-                          {position.applications} applications
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {position.views} views
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground text-xs">{position.postedDate}</span>
-                    </div>
-
-                    <Button variant="ghost" size="sm" className="text-secondary hover:bg-secondary/10 w-full justify-center">
-                      Manage Position
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Hiring Pipeline */}
-            <div>
-              <h3 className="text-xl font-bold text-foreground mb-4">Hiring Pipeline</h3>
-              <div className="space-y-2">
-                {hiringPipeline.map((stage, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-foreground">{stage.stage}</span>
-                      <span className="font-bold text-accent">{stage.count}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
-                      <div
-                        className={`h-full bg-gradient-to-r ${stage.color}`}
-                        style={{ width: `${(stage.count / 35) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
+          {/* Main Chart: Monthly Hiring */}
+          <Card className="lg:col-span-2 border border-primary/10 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary"/> Hiring Velocity (6 Months)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={analytics.monthlyHiring}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={10}/>
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dx={-10}/>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Area type="monotone" dataKey="applications" fill="url(#colorApps)" stroke="hsl(var(--primary))" strokeWidth={2} name="Applications" />
+                    <Bar dataKey="hired" barSize={20} fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} name="Hires" />
+                    <defs>
+                      <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                  </ComposedChart>
+                </ResponsiveContainer>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Quick Actions */}
-            <div className="space-y-3">
-              <Link href="/recruiter/jobs/new" className="block">
-                <Button className="w-full bg-gradient-to-r from-secondary to-primary" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Post Job
-                </Button>
-              </Link>
-              <Link href="/recruiter/search" className="block">
-                <Button variant="outline" className="w-full" size="sm">
-                  <Users className="w-4 h-4 mr-2" />
-                  Search Talent
-                </Button>
-              </Link>
-            </div>
-          </div>
+          {/* Hiring Funnel */}
+          <Card className="border border-primary/10 shadow-md flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2"><Target className="w-5 h-5 text-secondary"/> Recruitment Funnel</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-center">
+              <div className="h-[300px] w-full mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.funnel} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--muted))" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="stage" type="category" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--foreground))', fontWeight: 600 }} width={80} />
+                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}/>
+                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={24} name="Candidates">
+                      {
+                        analytics.funnel.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={index === analytics.funnel.length - 1 ? 'hsl(var(--secondary))' : 'hsl(var(--primary))'} />
+                        ))
+                      }
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex justify-between items-center px-4 py-3 bg-muted/30 rounded-lg text-sm border border-muted">
+                <span className="text-muted-foreground font-medium">Offer Acceptance Ratio</span>
+                <span className="font-bold text-foreground">
+                  {analytics.offers > 0 ? Math.round((analytics.hired / analytics.offers) * 100) : 0}%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Recent Applications */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">Recent Applications</h2>
-            <Link href="/recruiter/applications">
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid gap-3">
-            {recentApplications.map((app) => (
-              <div
-                key={app.id}
-                className="group relative overflow-hidden rounded-lg bg-card border border-accent/20 backdrop-blur-sm hover:border-accent/60 transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 p-4"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                <div className="relative z-10 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground group-hover:text-accent transition-colors">
-                      {app.candidateName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{app.position}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Applied {app.appliedDate}</p>
-                  </div>
-
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-accent">{app.employabilityScore}</p>
-                      <p className="text-xs text-muted-foreground">Score</p>
+        {/* Bottom Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border border-primary/10 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2"><Clock className="w-5 h-5 text-primary"/> Recent Activities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {activities.length === 0 ? (
+                  <p className="text-muted-foreground text-sm py-4">No recent activities.</p>
+                ) : (
+                  activities.map((activity, idx) => (
+                    <div key={activity.id} className="flex gap-4 items-start">
+                      <div className="relative mt-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                        {idx !== activities.length - 1 && <div className="absolute top-3 left-[4px] w-[2px] h-full -ml-[1px] bg-border"></div>}
+                      </div>
+                      <div className="pb-4">
+                        <p className="text-sm font-medium text-foreground">{activity.action}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{activity.details}</p>
+                        <p className="text-[10px] text-muted-foreground/70 mt-1">{new Date(activity.createdAt).toLocaleString()}</p>
+                      </div>
                     </div>
-                    <div className={`px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${getStatusColor(app.status)}`}>
-                      {app.status === 'pending' ? 'Pending' : app.status === 'shortlisted' ? 'Shortlisted' : 'Rejected'}
-                    </div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AppLayout>

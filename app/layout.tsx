@@ -1,19 +1,24 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+// Font fetching bypassed due to network timeout
+// import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-})
+// const geistSans = Geist({
+//   variable: '--font-geist-sans',
+//   subsets: ['latin'],
+// })
+
+// const geistMono = Geist_Mono({
+//   variable: '--font-geist-mono',
+//   subsets: ['latin'],
+// })
 
 export const metadata: Metadata = {
   title: 'CampusForge - Student Innovation Platform',
-  description: 'Connect, collaborate, and launch your career with CampusForge',
-  generator: 'v0.app',
+  description:
+    'Connect, collaborate, and launch your career with CampusForge',
   icons: {
     icon: [
       {
@@ -36,8 +41,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    {
+      media: '(prefers-color-scheme: light)',
+      color: '#ffffff',
+    },
+    {
+      media: '(prefers-color-scheme: dark)',
+      color: '#000000',
+    },
   ],
 }
 
@@ -47,11 +58,21 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
-      <body className="font-sans antialiased bg-background text-foreground">
-        <ThemeProvider>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className=""
+    >
+      <body className="min-h-screen bg-background font-sans antialiased text-foreground" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
+
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
